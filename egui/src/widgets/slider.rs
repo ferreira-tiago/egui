@@ -375,7 +375,10 @@ impl<'a> Slider<'a> {
         {
             let value = self.get_value();
 
-            let rail_radius = ui.painter().round_to_pixel((rect.height() / 8.0).max(2.0));
+            let rail_radius = ui
+                .painter()
+                .round_to_pixel((rect.height() / 4.0).at_least(2.0));
+
             let rail_rect = Rect::from_min_max(
                 pos2(rect.left(), rect.center().y - rail_radius),
                 pos2(rect.right(), rect.center().y + rail_radius),
@@ -385,8 +388,7 @@ impl<'a> Slider<'a> {
             let visuals = ui.style().interact(response);
             ui.painter().add(Shape::Rect {
                 rect: rail_rect,
-                corner_radius: rail_radius,
-
+                corner_radius: ui.visuals().widgets.inactive.corner_radius,
                 fill: ui.visuals().widgets.inactive.bg_fill,
                 // fill: visuals.bg_fill,
                 // fill: ui.visuals().extreme_bg_color,
@@ -395,11 +397,16 @@ impl<'a> Slider<'a> {
                 // stroke: ui.visuals().widgets.inactive.bg_stroke,
             });
 
+            let center = pos2(marker_center_x, rail_rect.center().y);
+            let radius = handle_radius(rect) + visuals.expansion;
+            let fill = visuals.bg_fill;
+            let stroke = visuals.fg_stroke;
+
             ui.painter().add(Shape::Circle {
-                center: pos2(marker_center_x, rail_rect.center().y),
-                radius: handle_radius(rect) + visuals.expansion,
-                fill: visuals.bg_fill,
-                stroke: visuals.fg_stroke,
+                center,
+                radius,
+                fill,
+                stroke,
             });
         }
     }
