@@ -2,21 +2,10 @@ use egui::{color::*, *};
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))]
-#[derive(PartialEq)]
+#[derive(Default, PartialEq)]
 pub struct Scrolling {
-    track_item: usize,
-    tack_item_align: Align,
-    offset: f32,
-}
-
-impl Default for Scrolling {
-    fn default() -> Self {
-        Self {
-            track_item: 25,
-            tack_item_align: Align::Center,
-            offset: 0.0,
-        }
-    }
+    demo: u32,
+    scroll_to: ScrollTo,
 }
 
 impl super::Demo for Scrolling {
@@ -36,6 +25,87 @@ impl super::Demo for Scrolling {
 }
 
 impl super::View for Scrolling {
+    fn ui(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.demo, 0, "Scroll to");
+            ui.selectable_value(&mut self.demo, 1, "Big content");
+        });
+        ui.separator();
+        if self.demo == 0 {
+            self.scroll_to.ui(ui);
+        } else {
+            // huge_content_manual(ui);
+            huge_content_automatic(ui);
+        }
+    }
+}
+
+fn huge_content_manual(ui: &mut egui::Ui) {
+    ui.label("A lot of rows, but only the visible ones are shown:");
+    ui.add_space(4.0);
+
+    let text_style = TextStyle::Body;
+    let row_height = ui.fonts()[text_style].row_height() + ui.spacing().item_spacing.y;
+    let num_rows = 10_000;
+
+    ScrollArea::auto_sized().show_viewport(ui, |ui, viewport| {
+        ui.set_height(row_height * num_rows as f32);
+
+        let first_item = (viewport.min.y / row_height).floor().at_least(0.0) as usize;
+        let last_item = (viewport.max.y / row_height).ceil() as usize + 1;
+        let last_item = last_item.at_most(num_rows);
+
+        for i in first_item..last_item {
+            let y = ui.min_rect().top() + i as f32 * row_height;
+            let text = format!("Row {}/{}", i + 1, num_rows);
+            ui.painter().text(
+                pos2(ui.min_rect().left(), y),
+                Align2::LEFT_TOP,
+                text,
+                text_style,
+                ui.visuals().text_color(),
+            );
+        }
+    });
+}
+
+fn huge_content_automatic(ui: &mut egui::Ui) {
+    ui.label("A lot of rows, but only the visible ones are shown:");
+    ui.add_space(4.0);
+
+    let text_style = TextStyle::Body;
+    let row_height = ui.fonts()[text_style].row_height();
+    let num_rows = 10_000;
+    ScrollArea::auto_sized().show_rows(ui, row_height, num_rows, |ui, row_range| {
+        for row in row_range {
+            let text = format!("Row {}/{}", row + 1, num_rows);
+            ui.label(text);
+        }
+    });
+}
+
+// ----------------------------------------------------------------------------
+
+#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "persistence", serde(default))]
+#[derive(PartialEq)]
+struct ScrollTo {
+    track_item: usize,
+    tack_item_align: Align,
+    offset: f32,
+}
+
+impl Default for ScrollTo {
+    fn default() -> Self {
+        Self {
+            track_item: 25,
+            tack_item_align: Align::Center,
+            offset: 0.0,
+        }
+    }
+}
+
+impl super::View for ScrollTo {
     fn ui(&mut self, ui: &mut Ui) {
         ui.label("This shows how you can scroll to a specific item or pixel offset");
 
